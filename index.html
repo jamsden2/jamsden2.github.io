@@ -82,8 +82,11 @@ var trees = {
 	},
 	cleanupTrees: function() {
 		map.data.forEach(function(feature) {
-			if (distance from centre is greater than size of viewport)
-				delete
+			if (google.maps.geometry.spherical.computeDistanceBetween(map.getCenter(), feature.getGeometry().get()) > google.maps.geometry.spherical.computeDistanceBetween(user.position, map.getBounds().getNorthEast()) * 3) {
+			map.data.remove(feature);
+			
+			};
+			
 			});
 	
 	}
@@ -115,6 +118,7 @@ var map = new google.maps.Map(document.getElementById('map'),{
 
  map.addListener('idle', function() {
 	user.position = map.getCenter();
+	trees.cleanupTrees();
 	var distanceLastReload = google.maps.geometry.spherical.computeDistanceBetween(user.position, user.lastReloadPosition);
 	console.log(distanceLastReload);
 		
