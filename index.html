@@ -34,23 +34,23 @@ var user = {
 	lastReloadPosition: new google.maps.LatLng(0,0),
 	//for getting the initial data, creating the hole in the reload, and setting bounds for the delete
 	get innerRing() {
-		var ringRadius = google.maps.geometry.spherical.computeDistanceBetween(user.position, map.getBounds().getNorthEast());
+		var ringRadius = google.maps.geometry.spherical.computeDistanceBetween(map.getCenter(), map.getBounds().getNorthEast());
 		//var ringRadius = 500;
 		var polygonArray = [];
 		for (i = 0; i < 360; i = i + 30) {
-			polygonArray.push(google.maps.geometry.spherical.computeOffset(user.position, ringRadius, i).toJSON());
+			polygonArray.push(google.maps.geometry.spherical.computeOffset(map.getCenter(), ringRadius, i).toJSON());
 		};
 		return polygonArray;
 	},
 	//for setting bound of the buffer data load	
 	ringArray: function(diameter) {
-		var ringRadius = google.maps.geometry.spherical.computeDistanceBetween(user.position, map.getBounds().getNorthEast()) * diameter;
+		var ringRadius = google.maps.geometry.spherical.computeDistanceBetween(map.getCenter(), map.getBounds().getNorthEast()) * diameter;
 		//var ringRadius = 1000;
 		var polygonArray = [];
 		for (i = 0; i < 360; i = i + 30) {
 			var pointCoords = [];
-			pointCoords.push(google.maps.geometry.spherical.computeOffset(user.position, ringRadius, i).lng());
-			pointCoords.push(google.maps.geometry.spherical.computeOffset(user.position, ringRadius, i).lat());
+			pointCoords.push(google.maps.geometry.spherical.computeOffset(map.getCenter(), ringRadius, i).lng());
+			pointCoords.push(google.maps.geometry.spherical.computeOffset(map.getCenter(), ringRadius, i).lat());
 			polygonArray.push(pointCoords);
 		};
 		return polygonArray;
@@ -74,8 +74,13 @@ var user = {
 		return geoQueryObject;
 		},
 	serviceRequests: 0,
-	geoLocates: 0
+	geoLocates: 0,
+	
 };
+
+
+
+
 
 var trees = {
 	totalTrees: function() {
@@ -87,7 +92,7 @@ var trees = {
 	},
 	cleanupTrees: function() {
 		map.data.forEach(function(feature) {
-			if (google.maps.geometry.spherical.computeDistanceBetween(map.getCenter(), feature.getGeometry().get()) > google.maps.geometry.spherical.computeDistanceBetween(user.position, map.getBounds().getNorthEast()) * 3) {
+			if (google.maps.geometry.spherical.computeDistanceBetween(map.getCenter(), feature.getGeometry().get()) > google.maps.geometry.spherical.computeDistanceBetween(map.getCenter(), map.getBounds().getNorthEast()) * 3) {
 			map.data.remove(feature);
 			
 			};
@@ -105,11 +110,23 @@ var trees = {
 	zoomIs: 0
 };	
 
-var serviceURL
+var features = {
+	//array of local geojson tree inventory services, split so that I can easily insert the polygon array
+	availableServices: [
+	["https://services.arcgis.com/ZpeBVw5o1kjit7LT/arcgis/rest/services/StreetTrees/FeatureServer/0/query?where=1%3D1&objectIds=&time=&geometry=", "&geometryType=esriGeometryPolygon&inSR=&spatialRel=esriSpatialRelContains&resultType=none&distance=0.0&units=esriSRUnit_Meter&returnGeodetic=false&outFields=*&returnGeometry=true&multipatchOption=xyFootprint&maxAllowableOffset=&geometryPrecision=&outSR=&returnIdsOnly=false&returnCountOnly=false&returnExtentOnly=false&returnDistinctValues=false&orderByFields=&groupByFieldsForStatistics=&outStatistics=&resultOffset=&resultRecordCount=&returnZ=false&returnM=false&quantizationParameters=&sqlFormat=none&f=pgeojson&token="],
+	["https://services1.arcgis.com/qAo1OsXi67t7XgmS/arcgis/rest/services/Tree_Inventory/FeatureServer/0/query?where=1%3D1&objectIds=&time=&geometry=", "&geometryType=esriGeometryPolygon&inSR=4326&spatialRel=esriSpatialRelContains&resultType=none&distance=0.0&units=esriSRUnit_Meter&returnGeodetic=false&outFields=*&returnGeometry=true&multipatchOption=xyFootprint&maxAllowableOffset=&geometryPrecision=&outSR=4326&returnIdsOnly=false&returnCountOnly=false&returnExtentOnly=false&returnDistinctValues=false&orderByFields=&groupByFieldsForStatistics=&outStatistics=&resultOffset=&resultRecordCount=&returnZ=false&returnM=false&quantizationParameters=&sqlFormat=none&f=pgeojson&token="],
+	["https://maps.cambridge.ca/arcgispub/rest/services/OpenData/MapServer/7/query?where=1%3D1&text=&objectIds=&time=&geometry=", "&geometryType=esriGeometryPolygon&inSR=&spatialRel=esriSpatialRelContains&relationParam=&outFields=*&returnGeometry=true&returnTrueCurves=false&maxAllowableOffset=&geometryPrecision=&outSR=&returnIdsOnly=false&returnCountOnly=false&orderByFields=&groupByFieldsForStatistics=&outStatistics=&returnZ=false&returnM=false&gdbVersion=&returnDistinctValues=false&resultOffset=&resultRecordCount=&f=geojson"]],
+	getData: function(type) {
+		for (var i = 0; i < this.availableServices.length; i++) {
+		var requestURL = this.availableServices[i][0] + encodeURIComponent(JSON.stringify(user.geoGeometry(type))) + this.availableServices[i][1]
+		map.data.loadGeoJson(requestURL);
+		}
+	}
 
 
 
 
+}
 
 
 		
@@ -119,15 +136,11 @@ var geoLocator = navigator.geolocation.watchPosition(function(position) {
 	user.position = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
 	map.panTo(user.position);
 	map.setZoom(21);
-	/*if (user.geoLocates == 0){
-		map.data.loadGeoJson("https://services.arcgis.com/ZpeBVw5o1kjit7LT/arcgis/rest/services/StreetTrees/FeatureServer/0/query?where=1%3D1&objectIds=&time=&geometry=" + encodeURIComponent(JSON.stringify(user.geoGeometry("viewport"))) + "&geometryType=esriGeometryPolygon&inSR=&spatialRel=esriSpatialRelContains&resultType=none&distance=0.0&units=esriSRUnit_Meter&returnGeodetic=false&outFields=*&returnGeometry=true&multipatchOption=xyFootprint&maxAllowableOffset=&geometryPrecision=&outSR=&returnIdsOnly=false&returnCountOnly=false&returnExtentOnly=false&returnDistinctValues=false&orderByFields=&groupByFieldsForStatistics=&outStatistics=&resultOffset=&resultRecordCount=&returnZ=false&returnM=false&quantizationParameters=&sqlFormat=none&f=pgeojson&token=");
-		user.serviceRequests++;	
-	
-	};
-	*/
 	user.geoLocates++;
 	console.log("geoLocates: " + user.geoLocates);
 	console.log("serviceRequests: " + user.serviceRequests);
+	locationMarker.setCenter(user.position);
+	
 });
 	
 var map = new google.maps.Map(document.getElementById('map'),{
@@ -138,58 +151,107 @@ var map = new google.maps.Map(document.getElementById('map'),{
 
 
 
- map.addListener('idle', function() {
+
+
+
+var locationMarker = new google.maps.Circle({
+		strokeColor: '#FF0000',
+		strokeOpacity: 0.8,
+		strokeWeight: 2,
+		fillColor: '#FF0000',
+		fillOpacity: 0.35,
+		map: map,
+		center: user.position,
+		radius: 5
+	});
+	
+
+map.data.setStyle({
+		icon: {
+				path: google.maps.SymbolPath.CIRCLE,
+				scale: 7,
+				strokeColor: 'green',
+				strokeOpacity: 0.8,
+				strokeWeight: 2,
+				fillColor: 'green',
+				fillOpacity: 0.2,
+		}
+	});		
+
+
+
+//listeners
+//map is idle
+map.addListener('idle', function() {
+
+	
+	//check if user is zoomed too far out
 	if (map.getZoom() < 18) {
 		trees.clearAllTrees();
 		document.getElementById('messageWindow').textContent = "You've zoomed out too far. Zoom in so I can get some data for you.";
 	} else {
- 
- 
- 
- 
- 
- 
-	console.log(map.getZoom());
-	user.position = map.getCenter();
-	trees.cleanupTrees();
-	var distanceLastReload = google.maps.geometry.spherical.computeDistanceBetween(user.position, user.lastReloadPosition);
-	console.log(distanceLastReload);
+		//update user position property - this is used in some areas that we don't want to use getCenter
+		//this is dead wrong and I based stuff off of it...
+		//user.position = map.getCenter();
+		//remove trees outside of buffer. we don't want to slow down the user's experience
+		trees.cleanupTrees();
+		var distanceLastReload = google.maps.geometry.spherical.computeDistanceBetween(map.getCenter(), user.lastReloadPosition);
+		console.log(distanceLastReload);
+		if (distanceLastReload < google.maps.geometry.spherical.computeDistanceBetween(map.getCenter(), map.getBounds().getNorthEast()) * 1.5) {
+			//console.log("get new data");
+			document.getElementById('messageWindow').textContent = "Loading trees...";
+			features.getData("buffer");
+			
+			user.serviceRequests++;
+			console.log("serviceRequests: " + user.serviceRequests);
+			document.getElementById('messageWindow').textContent = "Trees Loaded.";
 		
-	
-	
-	
-	
-	if (distanceLastReload < google.maps.geometry.spherical.computeDistanceBetween(user.position, map.getBounds().getNorthEast()) * 1.5) {
-		//console.log("get new data");
-		document.getElementById('messageWindow').textContent = "Loading trees...";
-		map.data.loadGeoJson("https://services.arcgis.com/ZpeBVw5o1kjit7LT/arcgis/rest/services/StreetTrees/FeatureServer/0/query?where=1%3D1&objectIds=&time=&geometry=" + encodeURIComponent(JSON.stringify(user.geoGeometry("buffer"))) + "&geometryType=esriGeometryPolygon&inSR=&spatialRel=esriSpatialRelContains&resultType=none&distance=0.0&units=esriSRUnit_Meter&returnGeodetic=false&outFields=*&returnGeometry=true&multipatchOption=xyFootprint&maxAllowableOffset=&geometryPrecision=&outSR=&returnIdsOnly=false&returnCountOnly=false&returnExtentOnly=false&returnDistinctValues=false&orderByFields=&groupByFieldsForStatistics=&outStatistics=&resultOffset=&resultRecordCount=&returnZ=false&returnM=false&quantizationParameters=&sqlFormat=none&f=pgeojson&token=");
-		user.serviceRequests++;
-		console.log("serviceRequests: " + user.serviceRequests);
-		document.getElementById('messageWindow').textContent = "Trees Loaded.";
+			user.lastReloadPosition = map.getCenter();
 		
-		user.lastReloadPosition = user.position;
-		//console.log("updated last reload position");
-		//console.log(map.getCenter().lat());
-		//console.log(encodeURIComponent(JSON.stringify(user.geoGeometry)));
-		//console.log(user.geoGeometry);
-	} else {
-		map.data.loadGeoJson("https://services.arcgis.com/ZpeBVw5o1kjit7LT/arcgis/rest/services/StreetTrees/FeatureServer/0/query?where=1%3D1&objectIds=&time=&geometry=" + encodeURIComponent(JSON.stringify(user.geoGeometry("full"))) + "&geometryType=esriGeometryPolygon&inSR=&spatialRel=esriSpatialRelContains&resultType=none&distance=0.0&units=esriSRUnit_Meter&returnGeodetic=false&outFields=*&returnGeometry=true&multipatchOption=xyFootprint&maxAllowableOffset=&geometryPrecision=&outSR=&returnIdsOnly=false&returnCountOnly=false&returnExtentOnly=false&returnDistinctValues=false&orderByFields=&groupByFieldsForStatistics=&outStatistics=&resultOffset=&resultRecordCount=&returnZ=false&returnM=false&quantizationParameters=&sqlFormat=none&f=pgeojson&token=");
-		user.serviceRequests++;
-		console.log("serviceRequests: " + user.serviceRequests);
-		user.lastReloadPosition = user.position;
-		document.getElementById('messageWindow').textContent = "Trees Loaded.";
-	};
-	
-	
-	
-	
-	
+		} else {
+			features.getData("full");
+			user.serviceRequests++;
+			console.log("serviceRequests: " + user.serviceRequests);
+			user.lastReloadPosition = map.getCenter();
+			document.getElementById('messageWindow').textContent = "Trees Loaded.";
+		};
 	console.log("I'm idle!");
 	console.log(trees.totalTrees());
-
-};	
+	var treeDataArray = [];
 	
+	map.data.forEach(function(feature){
+		var treeObject = {
+		name: "tree name",
+		coordinates: {},
+		distanceToUser: 9999999
+		};
+		var treeCommonNameOptions = ["COM_NAME", "COMMON_NAME", "SPECIES_NAME"];
+		var treeNormalizedName = "Unknown";
+		for (var i = 0; i < treeCommonNameOptions.length; i++){
+			var treeName = feature.getProperty(treeCommonNameOptions[i]); 
+			if (treeName) {
+				//console.log("NAME: ", treeName);
+				treeObject.name = {treeName};
+			};
+		};	
+		treeObject.coordinates = feature.getGeometry().get();
+		treeObject.distanceToUser = google.maps.geometry.spherical.computeDistanceBetween(user.position, treeObject.coordinates);
+		treeDataArray.push(treeObject);
+		//console.log(treeObject);
+		//console.log("ALL DATA");
+		//feature.forEachProperty(function(value, property) {
+		//	console.log(property, ":", value);
+		//});
 	});
+	
+	treeDataArray.sort(function(a,b) {
+			return parseFloat(a.distanceToUser) - parseFloat(b.distanceToUser);
+		});
+	//console.log(treeDataArray);
+	document.getElementById('messageWindow').textContent = "The closest tree to you is a " + treeDataArray[0]["name"]["treeName"] + ". It's " + Math.round(treeDataArray[0]["distanceToUser"]) + "m away. There is also a " + treeDataArray[1]["name"]["treeName"] + " " + Math.round(treeDataArray[1]["distanceToUser"]) + "m away.";
+	
+	};	
+});
 
 
 
@@ -198,7 +260,7 @@ map.addListener('zoom_changed', function() {
 	user.zoomIs = map.getZoom();
 	if (user.zoomWas < 18 & user.zoomIs >= 18) {
 		console.log("I should get more data.");
-		map.data.loadGeoJson("https://services.arcgis.com/ZpeBVw5o1kjit7LT/arcgis/rest/services/StreetTrees/FeatureServer/0/query?where=1%3D1&objectIds=&time=&geometry=" + encodeURIComponent(JSON.stringify(user.geoGeometry("viewport"))) + "&geometryType=esriGeometryPolygon&inSR=&spatialRel=esriSpatialRelContains&resultType=none&distance=0.0&units=esriSRUnit_Meter&returnGeodetic=false&outFields=*&returnGeometry=true&multipatchOption=xyFootprint&maxAllowableOffset=&geometryPrecision=&outSR=&returnIdsOnly=false&returnCountOnly=false&returnExtentOnly=false&returnDistinctValues=false&orderByFields=&groupByFieldsForStatistics=&outStatistics=&resultOffset=&resultRecordCount=&returnZ=false&returnM=false&quantizationParameters=&sqlFormat=none&f=pgeojson&token=");
+		features.getData("viewport");
 		user.serviceRequests++;	
 		document.getElementById('messageWindow').textContent = "Trees Loaded.";
 		
@@ -209,7 +271,8 @@ map.addListener('zoom_changed', function() {
 	
 map.addListener('drag', function() {
 	document.getElementById('messageWindow').textContent = "Panning...";
-
+	locationMarker.setCenter(map.getCenter());
+	user.position = map.getCenter();
 
 });
 	
