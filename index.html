@@ -3,29 +3,34 @@
     <style type="text/css">
      html, body { height: 100%; margin: 0; padding: 0; }
      #map { height: 100%; }
+	 #messageWindow {
+		background-color: white;
+        border: 1px solid black;
+        bottom: 50px;
+        padding: 10px;
+        position: absolute;
+        left: 100px;
+		right: 100px;
+		font-size: 24pt;
+		font-family: arial;
+		text-align: center
+	 }
    </style>
  </head>
  <body>
 	<div id="map"></div>
+	<div id="messageWindow">Loading...</div>
 	<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBB798KWeyYLq2AVUdbFIDndCp4eiPAk7I&v=3&libraries=geometry">
    
    </script>
 <script>
 
 //create the user object
-
-
-
-
-
-
-
-
 	
 var user = {
 	//the user position may not seem neccesary, but if I want to implement the 
 	//option for the user to search for their own location it will probably help
-	position: new google.maps.LatLng(0,0),
+	position: new google.maps.LatLng(43.466966,-80.5341646),
 	lastReloadPosition: new google.maps.LatLng(0,0),
 	//for getting the initial data, creating the hole in the reload, and setting bounds for the delete
 	get innerRing() {
@@ -89,20 +94,37 @@ var trees = {
 			
 			});
 	
-	}
+	},
+	clearAllTrees: function() {
+		map.data.forEach(function(feature) {
+			map.data.remove(feature);
+		});
+	
+	},
+	zoomWas: 0,
+	zoomIs: 0
 };	
-	
-	
+
+var serviceURL
+
+
+
+
+
+
 		
 
 	
 var geoLocator = navigator.geolocation.watchPosition(function(position) {
 	user.position = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
 	map.panTo(user.position);
-	if (user.geoLocates == 0){
+	map.setZoom(21);
+	/*if (user.geoLocates == 0){
 		map.data.loadGeoJson("https://services.arcgis.com/ZpeBVw5o1kjit7LT/arcgis/rest/services/StreetTrees/FeatureServer/0/query?where=1%3D1&objectIds=&time=&geometry=" + encodeURIComponent(JSON.stringify(user.geoGeometry("viewport"))) + "&geometryType=esriGeometryPolygon&inSR=&spatialRel=esriSpatialRelContains&resultType=none&distance=0.0&units=esriSRUnit_Meter&returnGeodetic=false&outFields=*&returnGeometry=true&multipatchOption=xyFootprint&maxAllowableOffset=&geometryPrecision=&outSR=&returnIdsOnly=false&returnCountOnly=false&returnExtentOnly=false&returnDistinctValues=false&orderByFields=&groupByFieldsForStatistics=&outStatistics=&resultOffset=&resultRecordCount=&returnZ=false&returnM=false&quantizationParameters=&sqlFormat=none&f=pgeojson&token=");
-		user.serviceRequests++;		
+		user.serviceRequests++;	
+	
 	};
+	*/
 	user.geoLocates++;
 	console.log("geoLocates: " + user.geoLocates);
 	console.log("serviceRequests: " + user.serviceRequests);
@@ -110,13 +132,24 @@ var geoLocator = navigator.geolocation.watchPosition(function(position) {
 	
 var map = new google.maps.Map(document.getElementById('map'),{
 	center: user.position,
-	zoom: 20
+	zoom: 12
 });	
 
 
 
 
  map.addListener('idle', function() {
+	if (map.getZoom() < 18) {
+		trees.clearAllTrees();
+		document.getElementById('messageWindow').textContent = "You've zoomed out too far. Zoom in so I can get some data for you.";
+	} else {
+ 
+ 
+ 
+ 
+ 
+ 
+	console.log(map.getZoom());
 	user.position = map.getCenter();
 	trees.cleanupTrees();
 	var distanceLastReload = google.maps.geometry.spherical.computeDistanceBetween(user.position, user.lastReloadPosition);
@@ -126,26 +159,61 @@ var map = new google.maps.Map(document.getElementById('map'),{
 	
 	
 	
-	if (distanceLastReload > google.maps.geometry.spherical.computeDistanceBetween(user.position, map.getBounds().getNorthEast())*.9) {
+	if (distanceLastReload < google.maps.geometry.spherical.computeDistanceBetween(user.position, map.getBounds().getNorthEast()) * 1.5) {
 		//console.log("get new data");
+		document.getElementById('messageWindow').textContent = "Loading trees...";
 		map.data.loadGeoJson("https://services.arcgis.com/ZpeBVw5o1kjit7LT/arcgis/rest/services/StreetTrees/FeatureServer/0/query?where=1%3D1&objectIds=&time=&geometry=" + encodeURIComponent(JSON.stringify(user.geoGeometry("buffer"))) + "&geometryType=esriGeometryPolygon&inSR=&spatialRel=esriSpatialRelContains&resultType=none&distance=0.0&units=esriSRUnit_Meter&returnGeodetic=false&outFields=*&returnGeometry=true&multipatchOption=xyFootprint&maxAllowableOffset=&geometryPrecision=&outSR=&returnIdsOnly=false&returnCountOnly=false&returnExtentOnly=false&returnDistinctValues=false&orderByFields=&groupByFieldsForStatistics=&outStatistics=&resultOffset=&resultRecordCount=&returnZ=false&returnM=false&quantizationParameters=&sqlFormat=none&f=pgeojson&token=");
 		user.serviceRequests++;
 		console.log("serviceRequests: " + user.serviceRequests);
-		
+		document.getElementById('messageWindow').textContent = "Trees Loaded.";
 		
 		user.lastReloadPosition = user.position;
 		//console.log("updated last reload position");
 		//console.log(map.getCenter().lat());
 		//console.log(encodeURIComponent(JSON.stringify(user.geoGeometry)));
 		//console.log(user.geoGeometry);
+	} else {
+		map.data.loadGeoJson("https://services.arcgis.com/ZpeBVw5o1kjit7LT/arcgis/rest/services/StreetTrees/FeatureServer/0/query?where=1%3D1&objectIds=&time=&geometry=" + encodeURIComponent(JSON.stringify(user.geoGeometry("full"))) + "&geometryType=esriGeometryPolygon&inSR=&spatialRel=esriSpatialRelContains&resultType=none&distance=0.0&units=esriSRUnit_Meter&returnGeodetic=false&outFields=*&returnGeometry=true&multipatchOption=xyFootprint&maxAllowableOffset=&geometryPrecision=&outSR=&returnIdsOnly=false&returnCountOnly=false&returnExtentOnly=false&returnDistinctValues=false&orderByFields=&groupByFieldsForStatistics=&outStatistics=&resultOffset=&resultRecordCount=&returnZ=false&returnM=false&quantizationParameters=&sqlFormat=none&f=pgeojson&token=");
+		user.serviceRequests++;
+		console.log("serviceRequests: " + user.serviceRequests);
+		user.lastReloadPosition = user.position;
+		document.getElementById('messageWindow').textContent = "Trees Loaded.";
 	};
+	
+	
+	
+	
+	
 	console.log("I'm idle!");
 	console.log(trees.totalTrees());
+
+};	
+	
+	});
+
+
+
+map.addListener('zoom_changed', function() {
+	user.zoomWas = user.zoomIs;
+	user.zoomIs = map.getZoom();
+	if (user.zoomWas < 18 & user.zoomIs >= 18) {
+		console.log("I should get more data.");
+		map.data.loadGeoJson("https://services.arcgis.com/ZpeBVw5o1kjit7LT/arcgis/rest/services/StreetTrees/FeatureServer/0/query?where=1%3D1&objectIds=&time=&geometry=" + encodeURIComponent(JSON.stringify(user.geoGeometry("viewport"))) + "&geometryType=esriGeometryPolygon&inSR=&spatialRel=esriSpatialRelContains&resultType=none&distance=0.0&units=esriSRUnit_Meter&returnGeodetic=false&outFields=*&returnGeometry=true&multipatchOption=xyFootprint&maxAllowableOffset=&geometryPrecision=&outSR=&returnIdsOnly=false&returnCountOnly=false&returnExtentOnly=false&returnDistinctValues=false&orderByFields=&groupByFieldsForStatistics=&outStatistics=&resultOffset=&resultRecordCount=&returnZ=false&returnM=false&quantizationParameters=&sqlFormat=none&f=pgeojson&token=");
+		user.serviceRequests++;	
+		document.getElementById('messageWindow').textContent = "Trees Loaded.";
+		
+	};
+
+	
+	
+	
+map.addListener('drag', function() {
+	document.getElementById('messageWindow').textContent = "Panning...";
+
+
 });
-
-
-
-
+	
+});
 
 
 
