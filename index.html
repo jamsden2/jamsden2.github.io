@@ -129,19 +129,34 @@ var features = {
 }
 
 
-		
+//setupgeostuff
 
-	
-var geoLocator = navigator.geolocation.watchPosition(function(position) {
+var geoOptions = {
+  enableHighAccuracy: true, 
+  maximumAge        : 5000, 
+  timeout           : 10000
+};
+
+function geoError() {
+  alert("Sorry, no position available.");
+};
+
+function success(position) {
 	user.position = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
 	map.panTo(user.position);
 	map.setZoom(21);
 	user.geoLocates++;
 	console.log("geoLocates: " + user.geoLocates);
 	console.log("serviceRequests: " + user.serviceRequests);
-	locationMarker.setCenter(user.position);
+	locationMarker.setCenter(user.position);	
+};
+
+
+
+		
+
 	
-});
+var geoLocator = navigator.geolocation.watchPosition(success,geoError,geoOptions);
 	
 var map = new google.maps.Map(document.getElementById('map'),{
 	center: user.position,
