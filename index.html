@@ -74,8 +74,7 @@ var user = {
 		return geoQueryObject;
 		},
 	serviceRequests: 0,
-	geoLocates: 0,
-	
+	geoLocates: 0	
 };
 
 
@@ -148,7 +147,8 @@ function success(position) {
 	user.geoLocates++;
 	console.log("geoLocates: " + user.geoLocates);
 	console.log("serviceRequests: " + user.serviceRequests);
-	locationMarker.setCenter(user.position);	
+	locationMarker.radius = position.coords.accuracy;
+	locationMarker.setCenter(user.position);
 };
 
 
@@ -177,14 +177,14 @@ var locationMarker = new google.maps.Circle({
 		fillOpacity: 0.35,
 		map: map,
 		center: user.position,
-		radius: 5
+		radius: 30
 	});
 	
 
 map.data.setStyle({
 		icon: {
 				path: google.maps.SymbolPath.CIRCLE,
-				scale: 7,
+				scale: 25,
 				strokeColor: 'green',
 				strokeOpacity: 0.8,
 				strokeWeight: 2,
