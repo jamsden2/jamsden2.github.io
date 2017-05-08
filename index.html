@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html>
  <head>
     <style type="text/css">
@@ -247,7 +248,10 @@ map.addListener('idle', function() {
 			var treeName = feature.getProperty(treeCommonNameOptions[i]); 
 			if (treeName) {
 				//console.log("NAME: ", treeName);
-				treeObject.name = {treeName};
+				//console.log(treeName);
+				treeObject.name = treeName;
+				//console.log(treeObject.name);
+				//treeObject.name = {treeName}; this was messing up IE. I don't know why I did it. But its fixed now.
 			};
 		};	
 		treeObject.coordinates = feature.getGeometry().get();
@@ -259,11 +263,10 @@ map.addListener('idle', function() {
 		//	console.log(property, ":", value);
 		//});
 	});
-	
 	treeDataArray.sort(function(a,b) {
 			return parseFloat(a.distanceToUser) - parseFloat(b.distanceToUser);
 		});
-	document.getElementById('messageWindow').textContent = "The closest tree to you is a " + treeDataArray[0]["name"]["treeName"] + ". It's " + Math.round(treeDataArray[0]["distanceToUser"]) + "m away. There is also a " + treeDataArray[1]["name"]["treeName"] + " " + Math.round(treeDataArray[1]["distanceToUser"]) + "m away and a " + treeDataArray[2]["name"]["treeName"] + " " + Math.round(treeDataArray[2]["distanceToUser"]) + "m away.";
+	document.getElementById('messageWindow').textContent = "The closest tree to you is a " + treeDataArray[0]["name"] + ". It's " + Math.round(treeDataArray[0]["distanceToUser"]) + "m away. There is also a " + treeDataArray[1]["name"] + " " + Math.round(treeDataArray[1]["distanceToUser"]) + "m away and a " + treeDataArray[2]["name"] + " " + Math.round(treeDataArray[2]["distanceToUser"]) + "m away.";
 	
 	};	
 	locationMarker.setCenter(map.getCenter());
