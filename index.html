@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
  <head>
+ <title>KWC City TreeID</title>
     <style type="text/css">
      html, body { height: 100%; margin: 0; padding: 0; }
      #map { 
@@ -23,41 +24,24 @@
    </style>
  </head>
  <body>
-	<div id="map"></div>
-	<div id="messageWindow">Walk towards a city tree to identify it. Stay off private property and be aware of your surroundings.</div>
-	<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBB798KWeyYLq2AVUdbFIDndCp4eiPAk7I&v=3&libraries=geometry">
-   
-   </script>
-   <script>
-  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
-
-  ga('create', 'UA-98704940-1', 'auto');
-  ga('send', 'pageview');
-
+<div id="map"></div>
+<div id="messageWindow">Walk towards a city tree to identify it. Stay off private property and be aware of your surroundings.</div>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBB798KWeyYLq2AVUdbFIDndCp4eiPAk7I&v=3&libraries=geometry">
 </script>
 <script>
-
+	(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+	(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+	m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+	})(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+	ga('create', 'UA-98704940-1', 'auto');
+	ga('send', 'pageview');
+</script>
+<script>
 //create the user object
-	
 var user = {
-	//the user position may not seem neccesary, but if I want to implement the 
-	//option for the user to search for their own location it will probably help
 	position: new google.maps.LatLng(43.466966,-80.5341646),
 	lastReloadPosition: new google.maps.LatLng(0,0),
-	//for getting the initial data, creating the hole in the reload, and setting bounds for the delete
-	get innerRing() {
-		var ringRadius = google.maps.geometry.spherical.computeDistanceBetween(map.getCenter(), map.getBounds().getNorthEast());
-		//var ringRadius = 500;
-		var polygonArray = [];
-		for (i = 0; i < 360; i = i + 30) {
-			polygonArray.push(google.maps.geometry.spherical.computeOffset(map.getCenter(), ringRadius, i).toJSON());
-		};
-		return polygonArray;
-	},
-	//for setting bound of the buffer data load	
+	//for bounds of data load	
 	ringArray: function(diameter) {
 		var ringRadius = google.maps.geometry.spherical.computeDistanceBetween(map.getCenter(), map.getBounds().getNorthEast()) * diameter;
 		//var ringRadius = 1000;
@@ -70,7 +54,6 @@ var user = {
 		};
 		return polygonArray;
 	},
-	
 	geoGeometry: function(type) {
 		var geoQueryObject = {
 			rings: [],
@@ -91,11 +74,7 @@ var user = {
 	serviceRequests: 0,
 	geoLocates: 0	
 };
-
-
-
-
-
+//for processing data about the trees in the data layer
 var trees = {
 	totalTrees: function() {
 		var treeCount = 0;
@@ -108,17 +87,13 @@ var trees = {
 		map.data.forEach(function(feature) {
 			if (google.maps.geometry.spherical.computeDistanceBetween(map.getCenter(), feature.getGeometry().get()) > google.maps.geometry.spherical.computeDistanceBetween(map.getCenter(), map.getBounds().getNorthEast()) * 3) {
 			map.data.remove(feature);
-			
 			};
-			
 			});
-	
 	},
 	clearAllTrees: function() {
 		map.data.forEach(function(feature) {
 			map.data.remove(feature);
 		});
-	
 	},
 	zoomWas: 0,
 	zoomIs: 0
@@ -136,25 +111,16 @@ var features = {
 		map.data.loadGeoJson(requestURL);
 		}
 	}
-
-
-
-
 }
-
-
 //setupgeostuff
-
 var geoOptions = {
   enableHighAccuracy: true, 
   maximumAge        : 5000, 
   timeout           : 10000
 };
-
 function geoError() {
   alert("It seems that I can't get a lock on your location. Walk around a bit and I should be able to pick it up.");
 };
-
 function success(position) {
 	user.position = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
 	map.panTo(user.position);
@@ -165,25 +131,14 @@ function success(position) {
 	locationMarker.radius = position.coords.accuracy;
 	locationMarker.setCenter(user.position);
 };
-
-
-
-		
-
-	
+//start the watcher	
 var geoLocator = navigator.geolocation.watchPosition(success,geoError,geoOptions);
 	
 var map = new google.maps.Map(document.getElementById('map'),{
 	center: user.position,
 	zoom: 12
 });	
-
-
-
-
-
-
-
+//create the user marker
 var locationMarker = new google.maps.Circle({
 		strokeColor: '#FF0000',
 		strokeOpacity: 0.8,
@@ -194,7 +149,6 @@ var locationMarker = new google.maps.Circle({
 		center: user.position,
 		radius: 30
 	});
-	
 
 map.data.setStyle({
 		icon: {
@@ -208,13 +162,8 @@ map.data.setStyle({
 		}
 	});		
 
-
-
 //listeners
-//map is idle
 map.addListener('idle', function() {
-
-	
 	//check if user is zoomed too far out
 	if (map.getZoom() < 19) {
 		trees.clearAllTrees();
@@ -229,17 +178,12 @@ map.addListener('idle', function() {
 		console.log(distanceLastReload);
 		if (distanceLastReload < google.maps.geometry.spherical.computeDistanceBetween(map.getCenter(), map.getBounds().getNorthEast()) * 1.5) {
 			features.getData("buffer");
-			
-			
-		
 			user.lastReloadPosition = map.getCenter();
-		
 		} else {
 			features.getData("full");
 			user.lastReloadPosition = map.getCenter();
 		};
 	var treeDataArray = [];
-	
 	map.data.forEach(function(feature){
 		var treeObject = {
 		name: "tree name",
@@ -274,32 +218,15 @@ map.addListener('idle', function() {
 	
 	};	
 	locationMarker.setCenter(map.getCenter());
-	
 });
-
-
-
 map.addListener('zoom_changed', function() {
 	user.zoomWas = user.zoomIs;
 	user.zoomIs = map.getZoom();
 	if (user.zoomWas < 19 & user.zoomIs >= 19) {
 		console.log("I should get more data.");
-		features.getData("viewport");
-		
-		
+		features.getData("viewport");	
 	};
-	
 });
-
-
-
-
-	
-  
-
-  </script>
-  
-   
-   
- </body>
+</script>
+</body>
 </html>
