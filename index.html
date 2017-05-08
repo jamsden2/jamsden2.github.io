@@ -3,7 +3,10 @@
  <head>
     <style type="text/css">
      html, body { height: 100%; margin: 0; padding: 0; }
-     #map { height: 100%; }
+     #map { 
+		height: 100%;
+		z-index:0
+	 }
 	 #messageWindow {
 		background-color: white;
         border: 1px solid black;
@@ -14,7 +17,8 @@
 		right: 100px;
 		font-size: 24pt;
 		font-family: arial;
-		text-align: center
+		text-align: center;
+		z-index: 10
 	 }
    </style>
  </head>
