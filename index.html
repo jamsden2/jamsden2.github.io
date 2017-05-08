@@ -21,11 +21,23 @@
 		text-align: center;
 		z-index: 10
 	 }
+	 #test {
+		position: absolute;
+		top: 50px;
+		left: 50px;
+		z-index: 11
+	}
    </style>
  </head>
  <body>
 <div id="map"></div>
 <div id="messageWindow">Walk towards a city tree to identify it. Stay off private property and be aware of your surroundings.</div>
+
+<form id="test" action="#">
+  bufferSize: <input type="number" name="bufferSize" value=1.5><br>
+  distanceToReload: <input type="number" name="distanceToReload" value=1><br>
+</form>
+
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBB798KWeyYLq2AVUdbFIDndCp4eiPAk7I&v=3&libraries=geometry">
 </script>
 <script>
@@ -62,12 +74,12 @@ var user = {
 			}
 		};
 		if (type == "full") {
-			geoQueryObject.rings.push(user.ringArray(2));
+			geoQueryObject.rings.push(user.ringArray(document.getElementsByName("bufferSize")[0].value));
 		} else if (type == "viewport") {
 			geoQueryObject.rings.push(user.ringArray(1));
 		} else if (type == "buffer") {
 			geoQueryObject.rings.push(user.ringArray(1));
-			geoQueryObject.rings.push(user.ringArray(2));
+			geoQueryObject.rings.push(user.ringArray(document.getElementsByName("bufferSize")[0].value));
 		};
 		return geoQueryObject;
 		},
@@ -85,7 +97,7 @@ var trees = {
 	},
 	cleanupTrees: function() {
 		map.data.forEach(function(feature) {
-			if (google.maps.geometry.spherical.computeDistanceBetween(map.getCenter(), feature.getGeometry().get()) > google.maps.geometry.spherical.computeDistanceBetween(map.getCenter(), map.getBounds().getNorthEast()) * 3) {
+			if (google.maps.geometry.spherical.computeDistanceBetween(map.getCenter(), feature.getGeometry().get()) > google.maps.geometry.spherical.computeDistanceBetween(map.getCenter(), map.getBounds().getNorthEast()) * document.getElementsByName("bufferSize")[0].value) {
 			map.data.remove(feature);
 			};
 			});
@@ -164,6 +176,7 @@ map.data.setStyle({
 
 //listeners
 map.addListener('idle', function() {
+	
 	//check if user is zoomed too far out
 	if (map.getZoom() < 19) {
 		trees.clearAllTrees();
@@ -176,7 +189,7 @@ map.addListener('idle', function() {
 		trees.cleanupTrees();
 		var distanceLastReload = google.maps.geometry.spherical.computeDistanceBetween(map.getCenter(), user.lastReloadPosition);
 		console.log(distanceLastReload);
-		if (distanceLastReload < google.maps.geometry.spherical.computeDistanceBetween(map.getCenter(), map.getBounds().getNorthEast()) * 1.5) {
+		if (distanceLastReload < google.maps.geometry.spherical.computeDistanceBetween(map.getCenter(), map.getBounds().getNorthEast()) * document.getElementsByName("distanceToReload")[0].value) {
 			features.getData("buffer");
 			user.lastReloadPosition = map.getCenter();
 		} else {
