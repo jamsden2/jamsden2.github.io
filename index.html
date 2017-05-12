@@ -33,11 +33,6 @@
 <div id="map"></div>
 <div id="messageWindow">Walk towards a city tree to identify it. Stay off private property and be aware of your surroundings.</div>
 
-<form id="test" action="#">
-  bufferSize: <input type="number" name="bufferSize" value=1.5><br>
-  distanceToReload: <input type="number" name="distanceToReload" value=1><br>
-</form>
-
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBB798KWeyYLq2AVUdbFIDndCp4eiPAk7I&v=3&libraries=geometry">
 </script>
 <script>
@@ -52,6 +47,8 @@
 //create the user object
 var user = {
 	position: new google.maps.LatLng(43.466966,-80.5341646),
+	bufferSize: 2,
+	distanceToReload: 1.5,
 	lastReloadPosition: new google.maps.LatLng(0,0),
 	//for bounds of data load	
 	ringArray: function(diameter) {
@@ -74,12 +71,12 @@ var user = {
 			}
 		};
 		if (type == "full") {
-			geoQueryObject.rings.push(user.ringArray(document.getElementsByName("bufferSize")[0].value));
+			geoQueryObject.rings.push(user.ringArray(user.bufferSize));
 		} else if (type == "viewport") {
 			geoQueryObject.rings.push(user.ringArray(1));
 		} else if (type == "buffer") {
 			geoQueryObject.rings.push(user.ringArray(1));
-			geoQueryObject.rings.push(user.ringArray(document.getElementsByName("bufferSize")[0].value));
+			geoQueryObject.rings.push(user.ringArray(user.bufferSize));
 		};
 		return geoQueryObject;
 		},
@@ -97,7 +94,7 @@ var trees = {
 	},
 	cleanupTrees: function() {
 		map.data.forEach(function(feature) {
-			if (google.maps.geometry.spherical.computeDistanceBetween(map.getCenter(), feature.getGeometry().get()) > google.maps.geometry.spherical.computeDistanceBetween(map.getCenter(), map.getBounds().getNorthEast()) * document.getElementsByName("bufferSize")[0].value) {
+			if (google.maps.geometry.spherical.computeDistanceBetween(map.getCenter(), feature.getGeometry().get()) > google.maps.geometry.spherical.computeDistanceBetween(map.getCenter(), map.getBounds().getNorthEast()) * user.bufferSize) {
 			map.data.remove(feature);
 			};
 			});
@@ -117,18 +114,19 @@ var features = {
 	["https://services.arcgis.com/ZpeBVw5o1kjit7LT/arcgis/rest/services/StreetTrees/FeatureServer/0/query?where=1%3D1&objectIds=&time=&geometry=", "&geometryType=esriGeometryPolygon&inSR=&spatialRel=esriSpatialRelContains&resultType=none&distance=0.0&units=esriSRUnit_Meter&returnGeodetic=false&outFields=*&returnGeometry=true&multipatchOption=xyFootprint&maxAllowableOffset=&geometryPrecision=&outSR=&returnIdsOnly=false&returnCountOnly=false&returnExtentOnly=false&returnDistinctValues=false&orderByFields=&groupByFieldsForStatistics=&outStatistics=&resultOffset=&resultRecordCount=&returnZ=false&returnM=false&quantizationParameters=&sqlFormat=none&f=pgeojson&token="],
 	["https://services1.arcgis.com/qAo1OsXi67t7XgmS/arcgis/rest/services/Tree_Inventory/FeatureServer/0/query?where=STATUS%3D%27ACTIVE%27&objectIds=&time=&geometry=", "&geometryType=esriGeometryPolygon&inSR=4326&spatialRel=esriSpatialRelContains&resultType=none&distance=0.0&units=esriSRUnit_Meter&returnGeodetic=false&outFields=*&returnGeometry=true&multipatchOption=xyFootprint&maxAllowableOffset=&geometryPrecision=&outSR=4326&returnIdsOnly=false&returnCountOnly=false&returnExtentOnly=false&returnDistinctValues=false&orderByFields=&groupByFieldsForStatistics=&outStatistics=&resultOffset=&resultRecordCount=&returnZ=false&returnM=false&quantizationParameters=&sqlFormat=none&f=pgeojson&token="],
 	["https://maps.cambridge.ca/arcgispub/rest/services/OpenData/MapServer/7/query?where=1%3D1&text=&objectIds=&time=&geometry=", "&geometryType=esriGeometryPolygon&inSR=&spatialRel=esriSpatialRelContains&relationParam=&outFields=*&returnGeometry=true&returnTrueCurves=false&maxAllowableOffset=&geometryPrecision=&outSR=&returnIdsOnly=false&returnCountOnly=false&orderByFields=&groupByFieldsForStatistics=&outStatistics=&returnZ=false&returnM=false&gdbVersion=&returnDistinctValues=false&resultOffset=&resultRecordCount=&f=geojson"]],
-	getData: function(type) {
+	getData: function(type,callback) {
 		for (var i = 0; i < this.availableServices.length; i++) {
 		var requestURL = this.availableServices[i][0] + encodeURIComponent(JSON.stringify(user.geoGeometry(type))) + this.availableServices[i][1]
-		map.data.loadGeoJson(requestURL);
+		map.data.loadGeoJson(requestURL,null,function(){console.log("loadGeoJSON complete");});
 		}
+		callback();
 	}
 }
 //setupgeostuff
 var geoOptions = {
   enableHighAccuracy: true, 
-  maximumAge        : 5000, 
-  timeout           : 10000
+  maximumAge        : 10000, 
+  timeout           : 30000
 };
 function geoError() {
   alert("It seems that I can't get a lock on your location. Walk around a bit and I should be able to pick it up.");
@@ -140,7 +138,11 @@ function success(position) {
 	user.geoLocates++;
 	console.log("geoLocates: " + user.geoLocates);
 	console.log("serviceRequests: " + user.serviceRequests);
+	if (position.coords.accuracy > 20) {
+	locationMarker.radius = 20;
+	} else {
 	locationMarker.radius = position.coords.accuracy;
+	}
 	locationMarker.setCenter(user.position);
 };
 //start the watcher	
@@ -159,13 +161,13 @@ var locationMarker = new google.maps.Circle({
 		fillOpacity: 0.35,
 		map: map,
 		center: user.position,
-		radius: 30
+		radius: 20
 	});
 
 map.data.setStyle({
 		icon: {
 				path: google.maps.SymbolPath.CIRCLE,
-				scale: 25,
+				scale: 15,
 				strokeColor: 'green',
 				strokeOpacity: 0.8,
 				strokeWeight: 2,
@@ -176,24 +178,25 @@ map.data.setStyle({
 
 //listeners
 map.addListener('idle', function() {
-	
+	locationMarker.setCenter(map.getCenter());
 	//check if user is zoomed too far out
+	console.log("Zoom:", map.getZoom());
 	if (map.getZoom() < 19) {
 		trees.clearAllTrees();
 		document.getElementById('messageWindow').textContent = "You've zoomed out too far. Zoom in so I can get some data for you.";
 	} else {
+		document.getElementById('messageWindow').textContent = "Walk around a bit and I'll tell you what trees are near you.";
 		//update user position property - this is used in some areas that we don't want to use getCenter
-		//this is dead wrong and I based stuff off of it...
 		user.position = map.getCenter();
 		//remove trees outside of buffer. we don't want to slow down the user's experience
 		trees.cleanupTrees();
 		var distanceLastReload = google.maps.geometry.spherical.computeDistanceBetween(map.getCenter(), user.lastReloadPosition);
 		console.log(distanceLastReload);
-		if (distanceLastReload < google.maps.geometry.spherical.computeDistanceBetween(map.getCenter(), map.getBounds().getNorthEast()) * document.getElementsByName("distanceToReload")[0].value) {
-			features.getData("buffer");
+		if (distanceLastReload < google.maps.geometry.spherical.computeDistanceBetween(map.getCenter(), map.getBounds().getNorthEast()) * user.distanceToReload) {
+			features.getData("buffer",function(){console.log("my callback!");});
 			user.lastReloadPosition = map.getCenter();
 		} else {
-			features.getData("full");
+			features.getData("full",function(){console.log("my callback!");});
 			user.lastReloadPosition = map.getCenter();
 		};
 	var treeDataArray = [];
@@ -228,9 +231,9 @@ map.addListener('idle', function() {
 			return parseFloat(a.distanceToUser) - parseFloat(b.distanceToUser);
 		});
 	document.getElementById('messageWindow').textContent = "The closest tree to you is a " + treeDataArray[0]["name"] + ". It's " + Math.round(treeDataArray[0]["distanceToUser"]) + "m away. There is also a " + treeDataArray[1]["name"] + " " + Math.round(treeDataArray[1]["distanceToUser"]) + "m away and a " + treeDataArray[2]["name"] + " " + Math.round(treeDataArray[2]["distanceToUser"]) + "m away.";
-	
+	console.log(treeDataArray.length);
 	};	
-	locationMarker.setCenter(map.getCenter());
+	
 });
 map.addListener('zoom_changed', function() {
 	user.zoomWas = user.zoomIs;
@@ -238,6 +241,8 @@ map.addListener('zoom_changed', function() {
 	if (user.zoomWas < 19 & user.zoomIs >= 19) {
 		console.log("I should get more data.");
 		features.getData("viewport");	
+		document.getElementById('messageWindow').textContent = "The closest tree to you is a " + treeDataArray[0]["name"] + ". It's " + Math.round(treeDataArray[0]["distanceToUser"]) + "m away. There is also a " + treeDataArray[1]["name"] + " " + Math.round(treeDataArray[1]["distanceToUser"]) + "m away and a " + treeDataArray[2]["name"] + " " + Math.round(treeDataArray[2]["distanceToUser"]) + "m away.";
+	console.log(treeDataArray.length);
 	};
 });
 </script>
