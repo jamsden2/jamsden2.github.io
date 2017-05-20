@@ -11,6 +11,7 @@ var user = {
 	viewPortSizeFactor: 1.5,
 	distanceToReloadFactor: 1,
 	bearing: 0,
+	accuracy: 5,
 	//for bounds of data load	
 	ringArray: function(diameterFactor) {
 		var ringRadius = google.maps.geometry.spherical.computeDistanceBetween(map.getCenter(), map.getBounds().getNorthEast()) * diameterFactor;
@@ -292,7 +293,8 @@ function geoSuccess(position) {
 	if (user.autoZoom) {
 		map.setZoom(21);
 	};
-	user.bearing = position.coords.bearing;
+	user.accuracy = position.coords.accuracy;
+	user.bearing = position.coords.heading;
 };
 
 
@@ -316,6 +318,7 @@ var geoLocator = navigator.geolocation.watchPosition(geoSuccess,geoError,geoOpti
 map.addListener('drag', function(){
 	bearingMarker.setPosition(map.getCenter());
 	bearingMarker.rotation = user.bearing;
+	locationCenter.radius = user.accuracy;
 	locationMarker.setPosition(map.getCenter());
 	locationCenter.setCenter(map.getCenter());
 	
@@ -326,6 +329,7 @@ map.addListener('idle', function() {
 	//trees.getData2(trees.getData2);
 	bearingMarker.setPosition(map.getCenter());
 	bearingMarker.rotation = user.bearing;
+	locationCenter.radius = user.accuracy;
 	locationMarker.setPosition(map.getCenter());
 	locationCenter.setCenter(map.getCenter());
 	console.log("Zoom:", map.getZoom());
