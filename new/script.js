@@ -170,7 +170,7 @@ function createTable(tableData,divId) {
 	var tableHeadSecondColumn = document.createElement('th');
 	tableHeadSecondColumn.appendChild(document.createTextNode("Distance"));
 	var tableHeadThirdColumn = document.createElement('th');
-	tableHeadThirdColumn.appendChild(document.createTextNode("Heading"));
+	tableHeadThirdColumn.appendChild(document.createTextNode(user.bearing));
 	var tableBody = document.createElement('tbody');
 
   tableData.forEach(function(rowData) {
