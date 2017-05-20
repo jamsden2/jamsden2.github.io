@@ -317,7 +317,7 @@ var geoLocator = navigator.geolocation.watchPosition(geoSuccess,geoError,geoOpti
 
 map.addListener('drag', function(){
 	bearingMarker.setPosition(map.getCenter());
-	bearingMarker.rotation = user.bearing;
+	bearingMarker.icon.rotation = user.bearing;
 	locationCenter.radius = user.accuracy;
 	locationMarker.setPosition(map.getCenter());
 	locationCenter.setCenter(map.getCenter());
@@ -328,7 +328,7 @@ map.addListener('drag', function(){
 map.addListener('idle', function() {
 	//trees.getData2(trees.getData2);
 	bearingMarker.setPosition(map.getCenter());
-	bearingMarker.rotation = user.bearing;
+	bearingMarker.icon.rotation = user.bearing;
 	locationCenter.radius = user.accuracy;
 	locationMarker.setPosition(map.getCenter());
 	locationCenter.setCenter(map.getCenter());
