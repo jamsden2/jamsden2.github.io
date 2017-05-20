@@ -1,0 +1,40 @@
+html, body {
+	height: 100%;
+	margin: 0;
+	padding: 0;
+	}
+	
+#map {
+	height: 65%;
+	z-index:0
+	}
+
+#results {
+	overflow: auto;
+	height: 28%;
+	font-size: 30pt;
+	background-color: #7CB342;
+	font-family: Arial, sans-serif;
+	color: white;
+}
+
+#header {
+	height: 5%;
+	font-size: 48pt;
+	background-color: DarkGreen;
+	font-family: Arial, sans-serif;
+	color: white;
+	padding: 10px
+}
+
+td,th {
+	background-color: DarkGreen;
+	padding: 10px;
+	
+}
+
+table {
+	border-collapse: separate;
+	border-spacing: 10px;
+	width: 100%
+}
