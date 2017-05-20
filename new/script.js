@@ -264,7 +264,21 @@ var bearingMarker = new google.maps.Marker({
           map: map
         });
 
+		
+var icon = {
+            path: google.maps.SymbolPath.BACKWARD_OPEN_ARROW,
+			scale: 10,
+			strokeWeight: 5,
+			strokeColor: "DodgerBlue",
+			strokeOpacity: .3,
+			rotation: 0
+			
+          }	;	
 
+	
+	
+	
+	
 	
 	
 	
@@ -294,7 +308,7 @@ function geoSuccess(position) {
 		map.setZoom(21);
 	};
 	user.accuracy = position.coords.accuracy;
-	user.bearing = position.coords.heading;
+	icon.rotation = position.coords.heading;
 };
 
 
@@ -317,7 +331,7 @@ var geoLocator = navigator.geolocation.watchPosition(geoSuccess,geoError,geoOpti
 
 map.addListener('drag', function(){
 	bearingMarker.setPosition(map.getCenter());
-	bearingMarker.icon.rotation = user.bearing;
+	//bearingMarker.icon.rotation = user.bearing;
 	locationCenter.radius = user.accuracy;
 	locationMarker.setPosition(map.getCenter());
 	locationCenter.setCenter(map.getCenter());
@@ -328,7 +342,12 @@ map.addListener('drag', function(){
 map.addListener('idle', function() {
 	//trees.getData2(trees.getData2);
 	bearingMarker.setPosition(map.getCenter());
-	bearingMarker.icon.rotation = user.bearing;
+	//bearingMarker.icon.rotation = user.bearing;
+	//console.log(icon.rotation);
+	//icon.rotation+=5;
+	
+	bearingMarker.setIcon(icon);
+	
 	locationCenter.radius = user.accuracy;
 	locationMarker.setPosition(map.getCenter());
 	locationCenter.setCenter(map.getCenter());
